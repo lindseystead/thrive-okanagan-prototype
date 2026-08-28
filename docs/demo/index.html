@@ -1,0 +1,503 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Thrive Okanagan — Intake to Insight (Scripted Demo)</title>
+
+<!-- ============================================================================
+     THRIVE OKANAGAN — COMMUNITY WELL-BEING INTELLIGENCE PLATFORM
+     Prototype 1 of 2: Scripted Walkthrough Demo
+
+     Purpose:
+       A guided, click-through demonstration of the full intake-to-insight
+       mechanism described in the Round Two technical design: conversational
+       AI intake with human confirmation, an organization's private dashboard,
+       a de-identified regional gap view, and Thrive's full administrator view.
+
+     Status:
+       Illustrative prototype only. All organization names, program data, and
+       counts on this page are SAMPLE DATA, not real pilot submissions. This
+       file demonstrates the mechanism, not the production system.
+
+     Prepared by: Lifesaver Technology Services Inc.
+     For: Thrive Okanagan / KGH Foundation — AWS Imagine Grant Canada, Round Two
+     ============================================================================ -->
+
+<style>
+
+/* ============================================================
+   1. DESIGN TOKENS — colour, spacing, theme (light/dark)
+   ============================================================ */
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@500;700;800&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap');
+
+:root {
+  --paper: #faf7f2;
+  --ink: #2a1f30;
+  --ink-soft: #6b5c72;
+  --panel: #ffffff;
+  --panel-border: #e8ddd0;
+  --purple: #5b247a;
+  --purple-soft: #efe4f5;
+  --gold: #f2a93b;
+  --gold-soft: #fdf1dd;
+  --env-social: #e8b84b;
+  --env-health: #e0693a;
+  --env-built: #2fa6a0;
+  --env-economic: #7b4b96;
+  --gap: #c0524b;
+  --gap-soft: #fbe9e7;
+  --strong: #2f8f6f;
+  --strong-soft: #e6f5ee;
+  --bubble-ai: #f1e9f6;
+  --bubble-user: #5b247a;
+  --bubble-user-text: #ffffff;
+  --shadow: 0 2px 10px rgba(42,31,48,0.06);
+}
+
+:root:not([data-theme="light"]) {
+  @media (prefers-color-scheme: dark) {
+    --paper: #201a26; --ink: #f2ecf5; --ink-soft: #b8a9c2; --panel: #2b2333; --panel-border: #4a3d54;
+    --purple: #c79ee0; --purple-soft: #382a44; --gold: #f2a93b; --gold-soft: #3d2f1a;
+    --env-social: #d1a53f; --env-health: #d76a44; --env-built: #3bb6ac; --env-economic: #a077bd;
+    --gap: #e0776f; --gap-soft: #3a2222; --strong: #62c79f; --strong-soft: #1d332a;
+    --bubble-ai: #382a44; --bubble-user: #7c4a9e; --bubble-user-text: #ffffff; --shadow: 0 2px 12px rgba(0,0,0,0.35);
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #201a26; --ink: #f2ecf5; --ink-soft: #b8a9c2; --panel: #2b2333; --panel-border: #4a3d54;
+  --purple: #c79ee0; --purple-soft: #382a44; --gold: #f2a93b; --gold-soft: #3d2f1a;
+  --env-social: #d1a53f; --env-health: #d76a44; --env-built: #3bb6ac; --env-economic: #a077bd;
+  --gap: #e0776f; --gap-soft: #3a2222; --strong: #62c79f; --strong-soft: #1d332a;
+  --bubble-ai: #382a44; --bubble-user: #7c4a9e; --bubble-user-text: #ffffff; --shadow: 0 2px 12px rgba(0,0,0,0.35);
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--paper); color: var(--ink);
+  font-family: 'IBM Plex Sans', sans-serif; padding: 28px 20px 60px;
+}
+.app { max-width: 980px; margin: 0 auto; }
+
+/* ============================================================
+   2. MASTHEAD — page title + demo-data disclosure
+   ============================================================ */
+.masthead { text-align: center; margin-bottom: 22px; }
+.masthead .brand { font-family: 'Nunito', sans-serif; font-weight: 800; font-size: 1.5rem; color: var(--purple); }
+.masthead .sub { color: var(--ink-soft); font-size: 0.9rem; margin-top: 4px; }
+.masthead .demo-note {
+  display: inline-block; margin-top: 10px; font-size: 0.72rem; font-family: 'IBM Plex Mono', monospace;
+  background: var(--gold-soft); color: #8a5a12; padding: 5px 12px; border-radius: 20px;
+}
+:root:not([data-theme="light"]) .masthead .demo-note { @media (prefers-color-scheme: dark) { color: var(--gold); } }
+:root[data-theme="dark"] .masthead .demo-note { color: var(--gold); }
+
+/* ============================================================
+   3. STEP NAVIGATION — switches between the four tiers
+   ============================================================ */
+.steps { display: flex; gap: 6px; justify-content: center; margin-bottom: 24px; flex-wrap: wrap; }
+.step-btn {
+  font-family: 'IBM Plex Sans', sans-serif; font-size: 0.8rem; font-weight: 600;
+  padding: 9px 16px; border-radius: 20px; border: 1.5px solid var(--panel-border);
+  background: var(--panel); color: var(--ink-soft); cursor: pointer; transition: all .15s;
+}
+.step-btn.active { background: var(--purple); color: #fff; border-color: var(--purple); }
+.step-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.panel {
+  background: var(--panel); border: 1px solid var(--panel-border); border-radius: 14px;
+  box-shadow: var(--shadow); padding: 22px; min-height: 420px;
+}
+.panel h2 { font-family: 'Nunito', sans-serif; font-size: 1.15rem; margin: 0 0 4px 0; color: var(--purple); }
+.panel .panel-sub { color: var(--ink-soft); font-size: 0.85rem; margin-bottom: 18px; }
+
+/* ============================================================
+   4. TIER 1 — CONVERSATIONAL INTAKE (chat simulation)
+   ============================================================ */
+.chat-log { display: flex; flex-direction: column; gap: 12px; max-width: 640px; margin: 0 auto 18px; min-height: 260px; }
+.msg { max-width: 78%; padding: 11px 15px; border-radius: 16px; font-size: 0.92rem; line-height: 1.45; animation: fadein .25s ease; }
+@keyframes fadein { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+.msg.ai { background: var(--bubble-ai); color: var(--ink); align-self: flex-start; border-bottom-left-radius: 4px; }
+.msg.user { background: var(--bubble-user); color: var(--bubble-user-text); align-self: flex-end; border-bottom-right-radius: 4px; }
+.msg .cite { display: block; font-family: 'IBM Plex Mono', monospace; font-size: 0.68rem; opacity: 0.7; margin-top: 6px; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; max-width: 640px; margin: 0 auto; }
+.chip {
+  font-family: 'IBM Plex Sans', sans-serif; font-size: 0.85rem; font-weight: 500;
+  padding: 9px 16px; border-radius: 20px; border: 1.5px solid var(--purple);
+  background: transparent; color: var(--purple); cursor: pointer; transition: all .15s;
+}
+.chip:hover { background: var(--purple-soft); }
+.chip.primary { background: var(--purple); color: #fff; }
+.draft-tracker {
+  max-width: 640px; margin: 18px auto 0; padding: 12px 16px; background: var(--gold-soft);
+  border-radius: 10px; font-family: 'IBM Plex Mono', monospace; font-size: 0.72rem; color: var(--ink-soft);
+}
+.draft-tracker b { color: var(--ink); }
+
+/* ============================================================
+   5. TIER 2 — ORGANIZATION DASHBOARD (private view)
+   ============================================================ */
+.stat-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px,1fr)); gap: 12px; margin-bottom: 20px; }
+.stat-card { background: var(--purple-soft); border-radius: 10px; padding: 14px; text-align: center; }
+.stat-card .num { font-family: 'IBM Plex Mono', monospace; font-size: 1.5rem; font-weight: 600; color: var(--purple); }
+.stat-card .lbl { font-size: 0.72rem; color: var(--ink-soft); margin-top: 2px; }
+.compare-row { display: flex; align-items: center; gap: 10px; font-size: 0.85rem; margin: 6px 0; }
+.compare-row .name { width: 170px; color: var(--ink-soft); flex-shrink: 0; }
+.bar-track { flex: 1; background: var(--panel-border); border-radius: 6px; height: 10px; position: relative; }
+.bar-fill { height: 100%; border-radius: 6px; background: var(--purple); }
+.bar-fill.region { background: var(--gold); opacity: 0.85; }
+.bar-val { font-family: 'IBM Plex Mono', monospace; font-size: 0.75rem; width: 30px; text-align: right; }
+.prog-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-top: 10px; }
+.prog-table th { text-align: left; font-family: 'IBM Plex Mono', monospace; font-size: 0.68rem; text-transform: uppercase; color: var(--ink-soft); padding: 6px 8px; border-bottom: 1.5px solid var(--panel-border); }
+.prog-table td { padding: 8px; border-bottom: 1px solid var(--panel-border); }
+.env-tag { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 0.72rem; font-weight: 600; color: #fff; }
+
+/* ============================================================
+   6. TIER 3 — REGIONAL VIEW (de-identified gap map)
+   ============================================================ */
+.filter-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+.filter-row select {
+  font-family: 'IBM Plex Sans', sans-serif; font-size: 0.82rem; padding: 7px 10px; border-radius: 8px;
+  border: 1.5px solid var(--panel-border); background: var(--panel); color: var(--ink);
+}
+.goal-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px,1fr)); gap: 10px; }
+.goal-cell {
+  border-radius: 10px; padding: 12px; color: #fff; position: relative; min-height: 84px;
+  display: flex; flex-direction: column; justify-content: space-between; cursor: default;
+  transition: transform .12s;
+}
+.goal-cell:hover { transform: translateY(-2px); }
+.goal-cell .g-num { font-family: 'IBM Plex Mono', monospace; font-size: 0.7rem; opacity: 0.85; }
+.goal-cell .g-name { font-size: 0.78rem; font-weight: 700; line-height: 1.25; }
+.goal-cell .g-count { font-family: 'IBM Plex Mono', monospace; font-size: 1.3rem; font-weight: 700; align-self: flex-end; }
+.goal-cell.gap-flag { outline: 3px solid var(--gap); outline-offset: -3px; }
+.legend-row { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 16px; font-size: 0.78rem; color: var(--ink-soft); }
+.legend-row .sw { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 5px; vertical-align: -1px; }
+.insight-box { margin-top: 18px; padding: 14px 16px; background: var(--gap-soft); border-left: 4px solid var(--gap); border-radius: 8px; font-size: 0.85rem; }
+.insight-box.good { background: var(--strong-soft); border-left-color: var(--strong); }
+
+/* ============================================================
+   7. TIER 4 — THRIVE ADMINISTRATOR VIEW (full dataset)
+   ============================================================ */
+.admin-table-wrap { overflow-x: auto; }
+.admin-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; min-width: 720px; }
+.admin-table th { text-align: left; font-family: 'IBM Plex Mono', monospace; font-size: 0.66rem; text-transform: uppercase; color: var(--ink-soft); padding: 6px 8px; border-bottom: 1.5px solid var(--panel-border); position: sticky; top: 0; background: var(--panel); }
+.admin-table td { padding: 7px 8px; border-bottom: 1px solid var(--panel-border); }
+.rating-dot { display: inline-flex; gap: 2px; }
+.rating-dot span { width: 7px; height: 7px; border-radius: 50%; background: var(--panel-border); }
+.rating-dot span.on { background: var(--purple); }
+.admin-banner { background: var(--purple); color: #fff; padding: 10px 14px; border-radius: 8px; font-size: 0.8rem; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ============================================================
+       MASTHEAD
+       ============================================================ -->
+  <div class="masthead">
+    <div class="brand">thrive. Okanagan</div>
+    <div class="sub">Community Well-being Intelligence — from a conversation to a regional picture</div>
+    <div class="demo-note">Interactive prototype — sample data, illustrating the real design, not live pilot submissions</div>
+  </div>
+
+  <!-- ============================================================
+       STEP NAVIGATION
+       ============================================================ -->
+  <div class="steps">
+    <button class="step-btn active" data-step="0">1 · Conversational Intake</button>
+    <button class="step-btn" data-step="1">2 · Your Dashboard</button>
+    <button class="step-btn" data-step="2">3 · Regional View</button>
+    <button class="step-btn" data-step="3">4 · Thrive Admin View</button>
+  </div>
+
+  <!-- ============================================================
+       TIER 1 — CONVERSATIONAL AI INTAKE
+       Demonstrates: Bedrock Converse proposing a mapping one turn at a
+       time; nothing is saved until the human confirms the final summary.
+       ============================================================ -->
+  <div class="panel" id="panel-0">
+    <h2>AI-Assisted Intake — Foundry Kelowna</h2>
+    <div class="panel-sub">One question at a time. Every mapping is confirmed by a person before anything is saved — nothing here is guessed on your behalf.</div>
+    <div class="chat-log" id="chatLog"></div>
+    <div class="chips" id="chatChips"></div>
+    <div class="draft-tracker" id="draftTracker">Draft status: <b>0 of 6</b> required fields captured · nothing saved yet</div>
+  </div>
+
+  <!-- ============================================================
+       TIER 2 — ORGANIZATION DASHBOARD (private view)
+       Demonstrates: an organization's own confirmed programs, plus an
+       org-vs-sector comparison built from a separate aggregate dataset.
+       ============================================================ -->
+  <div class="panel" id="panel-1" style="display:none;">
+    <h2>Foundry Kelowna — Your Programs</h2>
+    <div class="panel-sub">Only your organization's confirmed submissions. Never visible to any other organization.</div>
+    <div class="stat-row">
+      <div class="stat-card"><div class="num">4</div><div class="lbl">confirmed programs</div></div>
+      <div class="stat-card"><div class="num">2</div><div class="lbl">goals covered</div></div>
+      <div class="stat-card"><div class="num">3</div><div class="lbl">priority populations reached</div></div>
+    </div>
+    <h3 style="font-family:'Nunito',sans-serif;font-size:0.95rem;color:var(--ink);margin:18px 0 10px;">Your Programs</h3>
+    <table class="prog-table">
+      <thead><tr><th>Program</th><th>Environment</th><th>Goal</th><th>Geography</th></tr></thead>
+      <tbody>
+        <tr><td>Drop-in Youth Counselling</td><td><span class="env-tag" style="background:var(--env-health)">Health &amp; Social Care</span></td><td>G6 · Mental Health &amp; Coping</td><td>Kelowna</td></tr>
+        <tr><td>Peer Support Circles</td><td><span class="env-tag" style="background:var(--env-social)">Social &amp; Cultural</span></td><td>G1 · Social Cohesion</td><td>Regional</td></tr>
+        <tr><td>Family Navigation Line</td><td><span class="env-tag" style="background:var(--env-health)">Health &amp; Social Care</span></td><td>G5 · Early Childhood &amp; Family</td><td>Kelowna, West Kelowna</td></tr>
+        <tr><td>Youth Leadership Council</td><td><span class="env-tag" style="background:var(--env-social)">Social &amp; Cultural</span></td><td>G4 · Community-Based Networks</td><td>Regional</td></tr>
+      </tbody>
+    </table>
+    <h3 style="font-family:'Nunito',sans-serif;font-size:0.95rem;color:var(--ink);margin:22px 0 10px;">You vs. Your Sector Average</h3>
+    <div class="compare-row"><div class="name">Collaboration strength</div><div class="bar-track"><div class="bar-fill" style="width:40%"></div></div><div class="bar-val">2.0</div></div>
+    <div class="compare-row"><div class="name">Sector average</div><div class="bar-track"><div class="bar-fill region" style="width:58%"></div></div><div class="bar-val">2.9</div></div>
+    <div class="compare-row" style="margin-top:10px;"><div class="name">Capacity rating</div><div class="bar-track"><div class="bar-fill" style="width:82%"></div></div><div class="bar-val">4.1</div></div>
+    <div class="compare-row"><div class="name">Sector average</div><div class="bar-track"><div class="bar-fill region" style="width:82%"></div></div><div class="bar-val">4.1</div></div>
+    <div class="insight-box good">Your capacity rating matches the sector average — but your collaboration strength sits below it. Aggregate only, never another organization's raw data.</div>
+  </div>
+
+  <!-- ============================================================
+       TIER 3 — REGIONAL VIEW (de-identified gap map)
+       Demonstrates: goal x population x geography gap detection,
+       computed from aggregate counts only.
+       ============================================================ -->
+  <div class="panel" id="panel-2" style="display:none;">
+    <h2>Central Okanagan — Regional Picture</h2>
+    <div class="panel-sub">De-identified and aggregated. No organization's raw data appears here — only counts.</div>
+    <div class="filter-row">
+      <select id="popFilter">
+        <option value="all">All populations</option>
+        <option value="indigenous">Indigenous peoples</option>
+        <option value="unhoused">Unhoused / under-housed</option>
+        <option value="newcomers">Newcomers &amp; refugees</option>
+      </select>
+      <select id="geoFilter">
+        <option value="all">All areas</option>
+        <option value="kelowna">Kelowna</option>
+        <option value="westkelowna">West Kelowna</option>
+        <option value="rural">Rural / Electoral Areas</option>
+      </select>
+    </div>
+    <div class="goal-grid" id="goalGrid"></div>
+    <div class="legend-row">
+      <span><span class="sw" style="background:var(--env-social)"></span>Social &amp; Cultural</span>
+      <span><span class="sw" style="background:var(--env-health)"></span>Health &amp; Social Care</span>
+      <span><span class="sw" style="background:var(--env-built)"></span>Built &amp; Natural</span>
+      <span><span class="sw" style="background:var(--env-economic)"></span>Economic &amp; Work</span>
+      <span><span class="sw" style="background:transparent;outline:2px solid var(--gap)"></span>Gap — fewer than 2 programs</span>
+    </div>
+    <div class="insight-box" id="regionInsight">Economic and Work has zero programs mapped region-wide — the clearest gap in the current pilot data. Built and Natural has only one.</div>
+  </div>
+
+  <!-- ============================================================
+       TIER 4 — THRIVE ADMINISTRATOR VIEW (full dataset)
+       Demonstrates: the one deliberate, named exception to the
+       aggregate-only rule — direct dataset access for the backbone role.
+       ============================================================ -->
+  <div class="panel" id="panel-3" style="display:none;">
+    <h2>Thrive Administrator View — Full Dataset</h2>
+    <div class="admin-banner">⬤ Row-level access, not aggregate-only — a deliberate, named exception for the Thrive backbone role</div>
+    <div class="panel-sub">Every organization's raw, confirmed submissions, visible only to this role.</div>
+    <div class="admin-table-wrap">
+      <table class="admin-table">
+        <thead><tr><th>Organization</th><th>Program</th><th>Goal</th><th>Populations</th><th>Cost</th><th>Collab. Strength</th></tr></thead>
+        <tbody>
+          <tr><td>Foundry Kelowna</td><td>Drop-in Youth Counselling</td><td>G6</td><td>Youth, MH challenges</td><td>Free</td><td><span class="rating-dot"><span class="on"></span><span class="on"></span><span></span><span></span><span></span></span></td></tr>
+          <tr><td>Elevation Outdoors</td><td>Learn to Shred</td><td>G4</td><td>Youth, low-income</td><td>Sliding scale</td><td><span class="rating-dot"><span class="on"></span><span class="on"></span><span class="on"></span><span></span><span></span></span></td></tr>
+          <tr><td>ARC Programs</td><td>Family Connection Centre</td><td>G5</td><td>Families, newcomers</td><td>Free</td><td><span class="rating-dot"><span class="on"></span><span class="on"></span><span class="on"></span><span class="on"></span><span></span></span></td></tr>
+          <tr><td>Boys &amp; Girls Club</td><td>Youth Leadership Council</td><td>G4</td><td>Youth</td><td>Free</td><td><span class="rating-dot"><span class="on"></span><span class="on"></span><span></span><span></span><span></span></span></td></tr>
+          <tr><td>OSNS Child &amp; Youth</td><td>Early Development Screening</td><td>G5</td><td>Early years, disability</td><td>Insurance/3rd party</td><td><span class="rating-dot"><span class="on"></span><span class="on"></span><span class="on"></span><span></span><span></span></span></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="insight-box">This is the same confirmed data behind every tier above — the difference is permission, not a separate system. Row-level security is lifted for this one role only.</div>
+  </div>
+
+</div>
+
+<script>
+/* ============================================================================
+   SCRIPT SECTION A — STEP NAVIGATION ENGINE
+   Switches the visible panel between the four tiers.
+   ============================================================================ */
+const steps = document.querySelectorAll('.step-btn');
+const panels = [0,1,2,3].map(i => document.getElementById('panel-'+i));
+steps.forEach(btn => {
+  btn.addEventListener('click', () => {
+    const i = +btn.dataset.step;
+    steps.forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    panels.forEach((p,idx) => p.style.display = idx===i ? 'block' : 'none');
+  });
+});
+
+/* ============================================================================
+   SCRIPT SECTION B — CONVERSATIONAL INTAKE ENGINE (Tier 1)
+   A scripted stand-in for the real Bedrock Converse + Lambda control loop:
+   one turn at a time, structured fields validated before merge, nothing
+   saved until the final summary is explicitly confirmed.
+   ============================================================================ */
+const chatLog = document.getElementById('chatLog');
+const chatChips = document.getElementById('chatChips');
+const draftTracker = document.getElementById('draftTracker');
+let fieldsFilled = 0;
+const totalFields = 6;
+
+function addMsg(text, who, cite) {
+  const d = document.createElement('div');
+  d.className = 'msg ' + who;
+  d.innerHTML = text + (cite ? `<span class="cite">${cite}</span>` : '');
+  chatLog.appendChild(d);
+  chatLog.scrollTop = chatLog.scrollHeight;
+}
+function setChips(options) {
+  chatChips.innerHTML = '';
+  options.forEach(opt => {
+    const b = document.createElement('button');
+    b.className = 'chip' + (opt.primary ? ' primary' : '');
+    b.textContent = opt.label;
+    b.onclick = opt.onClick;
+    chatChips.appendChild(b);
+  });
+}
+function updateTracker(saved) {
+  draftTracker.innerHTML = saved
+    ? `Status: <b>confirmed &amp; saved</b> — organization_id-scoped row written to Aurora`
+    : `Draft status: <b>${fieldsFilled} of ${totalFields}</b> required fields captured · nothing saved yet`;
+}
+
+// Scripted conversation turns, mirroring the real form's consolidated
+// conversational groupings (Engineering Design Document, Section 6.6.1).
+const script = [
+  {
+    ai: "Tell me about a program you'd like to map — what's it called, and what does it actually do?",
+    userReply: "It's our Drop-in Youth Counselling program. Youth can come in without an appointment and talk to a counsellor same-day.",
+    extract: "Extracted: name = \"Drop-in Youth Counselling\", offering_type = direct_service_program",
+    next: 1
+  },
+  {
+    ai: "That sounds like it fits <b>Health and Social Care → Goal 6: Improve Mental Health and Coping Skills</b>, indicator \"Mental Health Practices.\" Does that feel right, or does something else fit better?",
+    chips: [
+      { label: "Yes, that's the right fit", primary: true, field: 'goal' },
+      { label: "Actually, Goal 7 fits better", field: 'goal' }
+    ],
+    extract: "Grounded in the framework's own indicator text — not invented",
+    next: 2
+  },
+  {
+    ai: "Who is this program primarily for, and where does it run?",
+    userReply: "Youth ages 12–18, mostly people already experiencing mental health challenges. It runs in Kelowna.",
+    extract: "Extracted: age_bands = [youth], priority_populations = [mental_health_challenges], service_area = [Kelowna]",
+    next: 3
+  },
+  {
+    ai: "Is there a cost to participate, and how does someone actually get in?",
+    userReply: "It's free, totally drop-in, no referral needed.",
+    extract: "Extracted: cost_structure = free, access_delivery_method = drop_in_available",
+    next: 4
+  },
+  {
+    ai: "Last part — three quick ratings, using the form's own scale. How would you rate your collaboration strength with other organizations on this program, 1 to 5?",
+    chips: [1,2,3,4,5].map(n => ({ label: String(n), field: 'rating', onClick: null, val: n })),
+    extract: null,
+    next: 5
+  },
+  {
+    ai: "Here's the full summary — nothing is saved until you confirm it's correct.<br><br><b>Drop-in Youth Counselling</b><br>Health &amp; Social Care → Goal 6 → Mental Health Practices<br>Youth, mental health challenges · Kelowna · Free · Drop-in<br>Collaboration strength: 2/5",
+    chips: [{ label: "Confirm & Save", primary: true, field: 'confirm' }],
+    extract: null,
+    final: true
+  }
+];
+
+let idx = 0;
+function playStep() {
+  if (idx >= script.length) return;
+  const s = script[idx];
+  addMsg(s.ai, 'ai');
+  if (s.userReply) {
+    setTimeout(() => {
+      addMsg(s.userReply, 'user');
+      fieldsFilled = Math.min(fieldsFilled + 1, totalFields);
+      updateTracker(false);
+      if (s.extract) setTimeout(() => addMsg(s.extract, 'ai'), 350);
+      setChips([{ label: "Continue", primary: true, onClick: () => { idx = s.next; chatChips.innerHTML=''; playStep(); } }]);
+    }, 500);
+  } else if (s.chips) {
+    setChips(s.chips.map(c => ({
+      label: c.label,
+      primary: c.primary,
+      onClick: () => {
+        addMsg(c.label, 'user');
+        fieldsFilled = Math.min(fieldsFilled + 1, totalFields);
+        if (s.final) {
+          updateTracker(true);
+          setTimeout(() => addMsg("Saved. This program now appears on your dashboard and feeds the regional aggregate — de-identified, never with your org name attached.", 'ai'), 400);
+          chatChips.innerHTML = '';
+        } else {
+          updateTracker(false);
+          if (s.extract) setTimeout(() => addMsg(s.extract, 'ai'), 300);
+          idx = s.next;
+          setTimeout(() => playStep(), s.extract ? 700 : 300);
+        }
+      }
+    })));
+  }
+}
+playStep();
+
+/* ============================================================================
+   SCRIPT SECTION C — REGIONAL GAP-DETECTION ENGINE (Tier 3)
+   Real framework data: all 16 goals, grouped by their real environment.
+   `base` counts are illustrative, sized to match the real, confirmed
+   pattern from June 2026 pilot data (Health & Social Care highest,
+   Economic and Work at zero) — not literal reported totals.
+   ============================================================================ */
+const goals = [
+  {n:1, name:"Strengthen Social Cohesion", env:'social', base:5},
+  {n:2, name:"Social & Cultural Inclusivity", env:'social', base:3},
+  {n:3, name:"Educational Equity", env:'social', base:2},
+  {n:4, name:"Community-Based Networks", env:'social', base:6},
+  {n:5, name:"Early Childhood & Family", env:'health', base:8},
+  {n:6, name:"Mental Health & Coping", env:'health', base:9},
+  {n:7, name:"Equity in Support Systems", env:'health', base:4},
+  {n:8, name:"Access to Health Services", env:'health', base:2},
+  {n:9, name:"Public Spaces for Recreation", env:'built', base:1},
+  {n:10, name:"Environmental Wellness", env:'built', base:0},
+  {n:11, name:"Mobility & Transportation", env:'built', base:0},
+  {n:12, name:"Climate & Disaster Prep", env:'built', base:0},
+  {n:13, name:"Economic Stability", env:'economic', base:0},
+  {n:14, name:"Workplace Mental Health", env:'economic', base:0},
+  {n:15, name:"Local Economic Development", env:'economic', base:0},
+  {n:16, name:"Regional Governance", env:'economic', base:0},
+];
+const envColor = { social:'var(--env-social)', health:'var(--env-health)', built:'var(--env-built)', economic:'var(--env-economic)' };
+const goalGrid = document.getElementById('goalGrid');
+const regionInsight = document.getElementById('regionInsight');
+
+function renderGrid() {
+  const pop = document.getElementById('popFilter').value;
+  const geo = document.getElementById('geoFilter').value;
+  let mult = 1;
+  if (pop !== 'all') mult *= 0.35;
+  if (geo !== 'all' && geo !== 'kelowna') mult *= 0.25;
+  goalGrid.innerHTML = '';
+  let zeroCount = 0;
+  goals.forEach(g => {
+    const count = Math.round(g.base * mult);
+    if (count === 0) zeroCount++;
+    const cell = document.createElement('div');
+    cell.className = 'goal-cell' + (count < 2 ? ' gap-flag' : '');
+    cell.style.background = envColor[g.env];
+    cell.innerHTML = `<div class="g-num">GOAL ${g.n}</div><div class="g-name">${g.name}</div><div class="g-count">${count}</div>`;
+    goalGrid.appendChild(cell);
+  });
+  const filterNote = (pop !== 'all' || geo !== 'all') ? ` Filtered to ${pop !== 'all' ? pop : 'all populations'}${geo !== 'all' ? ' in ' + geo : ''} — counts shrink accordingly, showing exactly where that group's coverage thins out.` : '';
+  regionInsight.textContent = `Economic and Work carries zero programs across every goal in this slice, and ${zeroCount} of 16 goals show fewer than 2 programs.${filterNote}`;
+}
+document.getElementById('popFilter').addEventListener('change', renderGrid);
+document.getElementById('geoFilter').addEventListener('change', renderGrid);
+renderGrid();
+</script>
+</body>
+</html>

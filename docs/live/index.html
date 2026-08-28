@@ -1,0 +1,502 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Thrive Okanagan — Intake to Insight (Live, Shared Prototype)</title>
+
+<!-- ============================================================================
+     THRIVE OKANAGAN — COMMUNITY WELL-BEING INTELLIGENCE PLATFORM
+     Prototype 2 of 2: Live, Freeform, Shared-State Demo
+
+     Purpose:
+       Unlike the scripted demo, this version accepts real free-text input,
+       classifies it against the actual 16-goal framework using a transparent,
+       client-side keyword classifier, and persists submissions to shared
+       browser storage so multiple people testing this page see the same
+       growing regional dataset.
+
+     Important, stated plainly:
+       The classifier here is a stand-in for the real system's AI layer
+       (Amazon Bedrock, Converse API, grounded via Bedrock Knowledge Bases).
+       It is NOT a live call to AWS — this is a static, client-side page and
+       cannot reach AWS directly. It demonstrates the intended mechanism
+       (propose a mapping, cite the matched source text, require human
+       confirmation before anything is saved), not the production AI.
+
+     Persistence:
+       Submissions are stored in this browser's localStorage, scoped to this
+       page's own origin. Data does not sync between different browsers or
+       devices — it is a same-browser, same-page demonstration of shared
+       state, not a real multi-user backend.
+
+     Prepared by: Lifesaver Technology Services Inc.
+     For: Thrive Okanagan / KGH Foundation — AWS Imagine Grant Canada, Round Two
+     ============================================================================ -->
+
+<style>
+/* ============================================================
+   1. DESIGN TOKENS
+   ============================================================ */
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@500;700;800&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap');
+:root {
+  --paper: #faf7f2; --ink: #2a1f30; --ink-soft: #6b5c72; --panel: #ffffff; --panel-border: #e8ddd0;
+  --purple: #5b247a; --purple-soft: #efe4f5; --gold: #f2a93b; --gold-soft: #fdf1dd;
+  --env-social: #e8b84b; --env-health: #e0693a; --env-built: #2fa6a0; --env-economic: #7b4b96;
+  --gap: #c0524b; --gap-soft: #fbe9e7; --strong: #2f8f6f; --strong-soft: #e6f5ee;
+  --bubble-ai: #f1e9f6; --bubble-user: #5b247a; --bubble-user-text: #ffffff;
+  --shadow: 0 2px 10px rgba(42,31,48,0.06);
+}
+:root:not([data-theme="light"]) { @media (prefers-color-scheme: dark) {
+  --paper: #201a26; --ink: #f2ecf5; --ink-soft: #b8a9c2; --panel: #2b2333; --panel-border: #4a3d54;
+  --purple: #c79ee0; --purple-soft: #382a44; --gold: #f2a93b; --gold-soft: #3d2f1a;
+  --env-social: #d1a53f; --env-health: #d76a44; --env-built: #3bb6ac; --env-economic: #a077bd;
+  --gap: #e0776f; --gap-soft: #3a2222; --strong: #62c79f; --strong-soft: #1d332a;
+  --bubble-ai: #382a44; --bubble-user: #7c4a9e; --bubble-user-text: #ffffff; --shadow: 0 2px 12px rgba(0,0,0,0.35);
+}}
+:root[data-theme="dark"] {
+  --paper: #201a26; --ink: #f2ecf5; --ink-soft: #b8a9c2; --panel: #2b2333; --panel-border: #4a3d54;
+  --purple: #c79ee0; --purple-soft: #382a44; --gold: #f2a93b; --gold-soft: #3d2f1a;
+  --env-social: #d1a53f; --env-health: #d76a44; --env-built: #3bb6ac; --env-economic: #a077bd;
+  --gap: #e0776f; --gap-soft: #3a2222; --strong: #62c79f; --strong-soft: #1d332a;
+  --bubble-ai: #382a44; --bubble-user: #7c4a9e; --bubble-user-text: #ffffff; --shadow: 0 2px 12px rgba(0,0,0,0.35);
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--paper); color: var(--ink); font-family: 'IBM Plex Sans', sans-serif; padding: 28px 20px 60px; }
+.app { max-width: 1000px; margin: 0 auto; }
+
+/* ============================================================
+   2. MASTHEAD + sync-status indicator
+   ============================================================ */
+.masthead { text-align: center; margin-bottom: 18px; }
+.masthead .brand { font-family: 'Nunito', sans-serif; font-weight: 800; font-size: 1.5rem; color: var(--purple); }
+.masthead .sub { color: var(--ink-soft); font-size: 0.9rem; margin-top: 4px; }
+.masthead .demo-note { display: inline-block; margin-top: 10px; font-size: 0.72rem; font-family: 'IBM Plex Mono', monospace; background: var(--gold-soft); color: #8a5a12; padding: 5px 12px; border-radius: 20px; }
+:root:not([data-theme="light"]) .masthead .demo-note { @media (prefers-color-scheme: dark) { color: var(--gold); } }
+:root[data-theme="dark"] .masthead .demo-note { color: var(--gold); }
+.sync-pill { display: inline-flex; align-items: center; gap: 6px; font-size: 0.7rem; font-family: 'IBM Plex Mono', monospace; color: var(--ink-soft); margin-left: 8px; }
+.sync-pill .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--strong); }
+
+/* ============================================================
+   3. ORG IDENTITY BAR (stand-in for Cognito login)
+   ============================================================ */
+.orgbar { display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
+.orgbar input { font-family: 'IBM Plex Sans', sans-serif; font-size: 0.85rem; padding: 8px 12px; border-radius: 20px; border: 1.5px solid var(--panel-border); background: var(--panel); color: var(--ink); width: 220px; }
+.orgbar .as { font-size: 0.8rem; color: var(--ink-soft); }
+
+/* ============================================================
+   4. STEP NAVIGATION
+   ============================================================ */
+.steps { display: flex; gap: 6px; justify-content: center; margin-bottom: 24px; flex-wrap: wrap; }
+.step-btn { font-family: 'IBM Plex Sans', sans-serif; font-size: 0.8rem; font-weight: 600; padding: 9px 16px; border-radius: 20px; border: 1.5px solid var(--panel-border); background: var(--panel); color: var(--ink-soft); cursor: pointer; }
+.step-btn.active { background: var(--purple); color: #fff; border-color: var(--purple); }
+
+.panel { background: var(--panel); border: 1px solid var(--panel-border); border-radius: 14px; box-shadow: var(--shadow); padding: 22px; min-height: 420px; }
+.panel h2 { font-family: 'Nunito', sans-serif; font-size: 1.15rem; margin: 0 0 4px 0; color: var(--purple); }
+.panel .panel-sub { color: var(--ink-soft); font-size: 0.85rem; margin-bottom: 18px; }
+
+/* ============================================================
+   5. TIER 1 — FREE-TEXT INTAKE + CLASSIFIER RESULT
+   ============================================================ */
+.intake-form { max-width: 620px; margin: 0 auto; }
+.field { margin-bottom: 14px; }
+.field label { display: block; font-size: 0.8rem; font-weight: 600; color: var(--ink); margin-bottom: 5px; }
+.field textarea, .field input[type=text], .field select {
+  width: 100%; font-family: 'IBM Plex Sans', sans-serif; font-size: 0.9rem; padding: 9px 12px;
+  border-radius: 8px; border: 1.5px solid var(--panel-border); background: var(--paper); color: var(--ink);
+}
+.field textarea { min-height: 70px; resize: vertical; }
+.field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.btn { font-family: 'IBM Plex Sans', sans-serif; font-weight: 600; font-size: 0.88rem; padding: 10px 20px; border-radius: 20px; border: none; background: var(--purple); color: #fff; cursor: pointer; }
+.btn.ghost { background: transparent; border: 1.5px solid var(--purple); color: var(--purple); }
+
+.classify-result { background: var(--purple-soft); border-radius: 10px; padding: 14px 16px; margin: 14px 0; font-size: 0.88rem; }
+.classify-result .tag { font-family: 'IBM Plex Mono', monospace; font-size: 0.7rem; color: var(--purple); text-transform: uppercase; letter-spacing: 0.04em; }
+.classify-result .goal-name { font-family: 'Nunito', sans-serif; font-weight: 700; font-size: 1rem; margin: 4px 0 6px; }
+.classify-result .cite { font-size: 0.78rem; color: var(--ink-soft); font-style: italic; }
+.classify-note { font-size: 0.72rem; color: var(--ink-soft); font-family: 'IBM Plex Mono', monospace; margin-top: 6px; }
+
+/* ============================================================
+   6. TIER 2 — ORGANIZATION DASHBOARD
+   ============================================================ */
+.stat-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px,1fr)); gap: 12px; margin-bottom: 20px; }
+.stat-card { background: var(--purple-soft); border-radius: 10px; padding: 14px; text-align: center; }
+.stat-card .num { font-family: 'IBM Plex Mono', monospace; font-size: 1.5rem; font-weight: 600; color: var(--purple); }
+.stat-card .lbl { font-size: 0.72rem; color: var(--ink-soft); margin-top: 2px; }
+.compare-row { display: flex; align-items: center; gap: 10px; font-size: 0.85rem; margin: 6px 0; }
+.compare-row .name { width: 170px; color: var(--ink-soft); flex-shrink: 0; }
+.bar-track { flex: 1; background: var(--panel-border); border-radius: 6px; height: 10px; position: relative; }
+.bar-fill { height: 100%; border-radius: 6px; background: var(--purple); }
+.bar-fill.region { background: var(--gold); opacity: 0.85; }
+.bar-val { font-family: 'IBM Plex Mono', monospace; font-size: 0.75rem; width: 30px; text-align: right; }
+.prog-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-top: 10px; }
+.prog-table th { text-align: left; font-family: 'IBM Plex Mono', monospace; font-size: 0.68rem; text-transform: uppercase; color: var(--ink-soft); padding: 6px 8px; border-bottom: 1.5px solid var(--panel-border); }
+.prog-table td { padding: 8px; border-bottom: 1px solid var(--panel-border); }
+.env-tag { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 0.72rem; font-weight: 600; color: #fff; white-space: nowrap; }
+.empty-note { color: var(--ink-soft); font-size: 0.85rem; text-align: center; padding: 30px 0; }
+
+/* ============================================================
+   7. TIER 3 — REGIONAL VIEW
+   ============================================================ */
+.filter-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+.filter-row select { font-family: 'IBM Plex Sans', sans-serif; font-size: 0.82rem; padding: 7px 10px; border-radius: 8px; border: 1.5px solid var(--panel-border); background: var(--panel); color: var(--ink); }
+.goal-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px,1fr)); gap: 10px; }
+.goal-cell { border-radius: 10px; padding: 12px; color: #fff; min-height: 84px; display: flex; flex-direction: column; justify-content: space-between; }
+.goal-cell .g-num { font-family: 'IBM Plex Mono', monospace; font-size: 0.7rem; opacity: 0.85; }
+.goal-cell .g-name { font-size: 0.78rem; font-weight: 700; line-height: 1.25; }
+.goal-cell .g-count { font-family: 'IBM Plex Mono', monospace; font-size: 1.3rem; font-weight: 700; align-self: flex-end; }
+.goal-cell.gap-flag { outline: 3px solid var(--gap); outline-offset: -3px; }
+.legend-row { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 16px; font-size: 0.78rem; color: var(--ink-soft); }
+.legend-row .sw { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 5px; vertical-align: -1px; }
+.insight-box { margin-top: 18px; padding: 14px 16px; background: var(--gap-soft); border-left: 4px solid var(--gap); border-radius: 8px; font-size: 0.85rem; }
+
+/* ============================================================
+   8. TIER 4 — ADMIN VIEW
+   ============================================================ */
+.admin-table-wrap { overflow-x: auto; }
+.admin-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; min-width: 720px; }
+.admin-table th { text-align: left; font-family: 'IBM Plex Mono', monospace; font-size: 0.66rem; text-transform: uppercase; color: var(--ink-soft); padding: 6px 8px; border-bottom: 1.5px solid var(--panel-border); }
+.admin-table td { padding: 7px 8px; border-bottom: 1px solid var(--panel-border); }
+.admin-banner { background: var(--purple); color: #fff; padding: 10px 14px; border-radius: 8px; font-size: 0.8rem; margin-bottom: 14px; }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- MASTHEAD -->
+  <div class="masthead">
+    <div class="brand">thrive. Okanagan <span class="sync-pill" id="syncPill"><span class="dot"></span>local demo storage</span></div>
+    <div class="sub">Community Well-being Intelligence — a live, testable prototype</div>
+    <div class="demo-note">Real 16-goal framework · real form fields · client-side classifier standing in for Amazon Bedrock — not a live AWS call</div>
+  </div>
+
+  <!-- ORG IDENTITY BAR (stand-in for Cognito) -->
+  <div class="orgbar">
+    <span class="as">Testing as:</span>
+    <input type="text" id="orgName" placeholder="Type your organization name…" value="">
+  </div>
+
+  <!-- STEP NAVIGATION -->
+  <div class="steps">
+    <button class="step-btn active" data-step="0">1 · Describe a Program</button>
+    <button class="step-btn" data-step="1">2 · Your Dashboard</button>
+    <button class="step-btn" data-step="2">3 · Regional View</button>
+    <button class="step-btn" data-step="3">4 · Thrive Admin View</button>
+  </div>
+
+  <!-- TIER 1 -->
+  <div class="panel" id="panel-0">
+    <h2>Describe a Program — in your own words</h2>
+    <div class="panel-sub">Type real, free text like you would to a person. The system proposes a mapping to the real framework and cites which indicator it matched — nothing is saved until you confirm.</div>
+    <div class="intake-form">
+      <div class="field">
+        <label>What does this program do?</label>
+        <textarea id="descInput" placeholder="e.g. We run a free drop-in counselling space for youth struggling with anxiety and stress, no appointment needed..."></textarea>
+      </div>
+      <button class="btn" id="classifyBtn">Propose a mapping</button>
+      <div id="classifyResult"></div>
+    </div>
+  </div>
+
+  <!-- TIER 2 -->
+  <div class="panel" id="panel-1" style="display:none;">
+    <h2 id="orgDashTitle">Your Programs</h2>
+    <div class="panel-sub">Only your organization's confirmed submissions. Never visible to any other organization.</div>
+    <div id="orgDashBody"></div>
+  </div>
+
+  <!-- TIER 3 -->
+  <div class="panel" id="panel-2" style="display:none;">
+    <h2>Central Okanagan — Regional Picture</h2>
+    <div class="panel-sub">De-identified and aggregated, built live from every confirmed submission across every tester — no organization's raw data appears here, only counts.</div>
+    <div class="filter-row">
+      <select id="popFilter"><option value="all">All populations</option></select>
+      <select id="geoFilter"><option value="all">All areas</option></select>
+    </div>
+    <div class="goal-grid" id="goalGrid"></div>
+    <div class="legend-row">
+      <span><span class="sw" style="background:var(--env-social)"></span>Social &amp; Cultural</span>
+      <span><span class="sw" style="background:var(--env-health)"></span>Health &amp; Social Care</span>
+      <span><span class="sw" style="background:var(--env-built)"></span>Built &amp; Natural</span>
+      <span><span class="sw" style="background:var(--env-economic)"></span>Economic &amp; Work</span>
+      <span><span class="sw" style="background:transparent;outline:2px solid var(--gap)"></span>Gap — fewer than 2 programs</span>
+    </div>
+    <div class="insight-box" id="regionInsight"></div>
+  </div>
+
+  <!-- TIER 4 -->
+  <div class="panel" id="panel-3" style="display:none;">
+    <h2>Thrive Administrator View — Full Dataset</h2>
+    <div class="admin-banner">⬤ Row-level access, not aggregate-only — a deliberate, named exception for the Thrive backbone role</div>
+    <div class="panel-sub">Every organization's raw, confirmed submissions from this shared test session.</div>
+    <div class="admin-table-wrap" id="adminTableWrap"></div>
+  </div>
+
+</div>
+
+<script>
+/* ============================================================================
+   SCRIPT SECTION A — FRAMEWORK DATA
+   The real 16 goals, their real environment groupings, and a small keyword
+   set drawn from each goal's real indicator definition (Thrive Okanagan
+   Goals for Well-being Framework, Summary Report). Used by the classifier
+   below — this IS the actual taxonomy, not placeholder data.
+   ============================================================================ */
+const GOALS = [
+  {n:1, name:"Strengthen Social Cohesion and Sense of Belonging", env:'social', indicator:"Community Engagement", def:"Organized opportunities for community members to participate in events, volunteer activities, and social gatherings.", kw:["community","volunteer","gathering","belonging","drop-in","social","trust"]},
+  {n:2, name:"Promote Social and Cultural Inclusivity", env:'social', indicator:"Social Inclusion", def:"Policies and practices that promote diversity, equity, and access for all members of the community.", kw:["diversity","cultural","heritage","inclusion","newcomer","immigrant","refugee"]},
+  {n:3, name:"Promote Educational Equity and Lifelong Learning Opportunities", env:'social', indicator:"Educational Access", def:"Availability and quality of educational resources and opportunities accessible to all community members.", kw:["education","school","literacy","graduation","learning","tutoring","curriculum"]},
+  {n:4, name:"Strengthen Community-Based Social Networks and Support Systems", env:'social', indicator:"Youth Leadership and Engagement Opportunities", def:"Programs that promote youth participation in decision-making, such as youth councils and advisory boards.", kw:["youth council","leadership","mentor","peer group","engagement","advisory"]},
+  {n:5, name:"Promote/support Early Childhood Development and Family Systems", env:'health', indicator:"Access to Family Supports for Early Development and Youth", def:"Availability and accessibility of resources, programs, and services to support families and the health and development of children and youth.", kw:["early childhood","family","parent","infant","child development","caregiver"]},
+  {n:6, name:"Improve Mental Health and Coping Skills in the Community", env:'health', indicator:"Mental Health Practices", def:"Systems that support physical activity, nutrition, stress management, and self-care, influencing community mental health outcomes.", kw:["mental health","counselling","anxiety","stress","coping","self-care","wellness","crisis"]},
+  {n:7, name:"Strengthen and Promote Equity in Support Systems", env:'health', indicator:"Coordination Between Groups", def:"Cross-sector referral pathways, digital navigation platforms, warm handoffs, and interagency coordination.", kw:["referral","navigation","warm handoff","coordination","support network"]},
+  {n:8, name:"Improve Access to Comprehensive Health and Well-being Services", env:'health', indicator:"Policies and Programs to Enable Universal Access", def:"Policies and programs that reduce barriers and apply harm reduction principles to create accessible, equitable, and supportive services for diverse populations.", kw:["harm reduction","universal access","barrier","equitable","autonomy","choice"]},
+  {n:9, name:"Expand/Enhance Equitable Access to Public Spaces for Leisure, Recreation, and Social Connection", env:'built', indicator:"Access to Recreation and Leisure Spaces", def:"Availability and accessibility of parks, green spaces, and recreational areas for community use.", kw:["park","green space","recreation","leisure","urban design","public space"]},
+  {n:10, name:"Improve Environmental Wellness and Quality", env:'built', indicator:"Environmental Wellness", def:"The stewardship and condition of natural environments, including efforts to sustain and enhance resources such as air, water, and green spaces.", kw:["environment","stewardship","air quality","water","sustainability"]},
+  {n:11, name:"Strengthen Community Mobility and Transportation Infrastructure", env:'built', indicator:"Transportation Infrastructure", def:"Quality and accessibility of public transit, bike lanes, and pedestrian pathways within the community.", kw:["transit","transportation","bike lane","pedestrian","mobility","accessible transport"]},
+  {n:12, name:"Build Climate Resilience and Disaster Preparedness", env:'built', indicator:"Disaster Preparedness", def:"Community readiness and systems in place for responding to natural disasters and emergencies.", kw:["climate","disaster","emergency","preparedness","resilience","wildfire","flood"]},
+  {n:13, name:"Ensure Economic Stability and Affordability", env:'economic', indicator:"Economic Stability", def:"Overall financial security in the community, ensuring consistent access to essential resources like housing and healthcare.", kw:["financial security","affordability","housing cost","essential resources","poverty"]},
+  {n:14, name:"Promote Psychological Health and Safety, and Equity in the Workplace", env:'economic', indicator:"Workplace Mental Health Policies", def:"Organizational policies and practices that support employee mental health and psychological safety.", kw:["workplace","employee","EAP","psychological safety","employer"]},
+  {n:15, name:"Promote Local Economic Development", env:'economic', indicator:"Job Training and Youth Employment Opportunities", def:"Providing community members, including youth, with access to programs that teach job skills or offer upskilling opportunities.", kw:["job training","small business","employment","upskilling","co-op","vocational","apprenticeship"]},
+  {n:16, name:"Foster Collaborative Regional Governance", env:'economic', indicator:"Intergovernmental Collaboration", def:"Evaluates the frequency and effectiveness of governments working together with each other and with community organizations.", kw:["governance","intergovernmental","municipal","policy","advocacy","regional coordination"]},
+];
+const envColor = { social:'var(--env-social)', health:'var(--env-health)', built:'var(--env-built)', economic:'var(--env-economic)' };
+const envLabel = { social:'Social & Cultural', health:'Health & Social Care', built:'Built & Natural', economic:'Economic & Work' };
+
+/* ============================================================================
+   SCRIPT SECTION B — CLASSIFIER (transparent stand-in for Bedrock Converse)
+   Real, honest limitation: this is a simple keyword-match scorer running
+   entirely in the browser. It is NOT a call to Amazon Bedrock — a static
+   page cannot reach AWS. It exists to demonstrate the shape of the real
+   mechanism: propose a mapping, cite the matched source text, let the
+   human confirm or override.
+   ============================================================================ */
+function classify(text) {
+  const lower = text.toLowerCase();
+  let best = null, bestScore = 0;
+  GOALS.forEach(g => {
+    let score = 0;
+    g.kw.forEach(k => { if (lower.includes(k)) score++; });
+    if (score > bestScore) { bestScore = score; best = g; }
+  });
+  return { goal: best || GOALS[0], score: bestScore };
+}
+
+/* ============================================================================
+   SCRIPT SECTION C — SHARED-STATE PERSISTENCE
+   Stand-in for Aurora: submissions persist to this browser's localStorage,
+   scoped to this page's own origin. This demonstrates the shape of a
+   shared, growing dataset — it does not sync across different browsers,
+   devices, or people. A real deployment would replace this with an
+   authenticated write to Amazon Aurora via API Gateway + Lambda.
+   ============================================================================ */
+const STORAGE_KEY = 'thrive_demo_submissions_v1';
+let submissions = [];
+try {
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if (raw) submissions = JSON.parse(raw);
+} catch (e) { submissions = []; }
+
+function saveSubmissions() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(submissions)); } catch (e) { /* storage unavailable */ }
+}
+
+/* ============================================================================
+   SCRIPT SECTION D — STEP NAVIGATION
+   ============================================================================ */
+const steps = document.querySelectorAll('.step-btn');
+const panels = [0,1,2,3].map(i => document.getElementById('panel-'+i));
+steps.forEach(btn => {
+  btn.addEventListener('click', () => {
+    const i = +btn.dataset.step;
+    steps.forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    panels.forEach((p,idx) => p.style.display = idx===i ? 'block' : 'none');
+    if (i===1) renderOrgDash();
+    if (i===2) renderRegion();
+    if (i===3) renderAdmin();
+  });
+});
+
+function getOrg() {
+  return (document.getElementById('orgName').value || 'Unnamed Organization').trim();
+}
+
+/* ============================================================================
+   SCRIPT SECTION E — TIER 1: INTAKE FORM HANDLERS
+   ============================================================================ */
+const classifyBtn = document.getElementById('classifyBtn');
+const classifyResult = document.getElementById('classifyResult');
+let pendingClassification = null;
+
+classifyBtn.addEventListener('click', () => {
+  const text = document.getElementById('descInput').value.trim();
+  if (!text) return;
+  const { goal, score } = classify(text);
+  pendingClassification = { text, goal };
+  classifyResult.innerHTML = `
+    <div class="classify-result">
+      <div class="tag">${envLabel[goal.env]} — Goal ${goal.n}</div>
+      <div class="goal-name">${goal.name}</div>
+      <div class="cite">Matched indicator: "${goal.indicator}" — ${goal.def}</div>
+      <div class="classify-note">${score>0 ? score+' keyword match(es) against the real framework text' : 'No strong keyword match — lowest-confidence guess, please correct below if needed'}</div>
+    </div>
+    <div class="field">
+      <label>Not the right fit? Choose the goal yourself</label>
+      <select id="goalOverride">
+        ${GOALS.map(g => `<option value="${g.n}" ${g.n===goal.n?'selected':''}>Goal ${g.n}: ${g.name}</option>`).join('')}
+      </select>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Who is this mainly for?</label>
+        <select id="popField">
+          <option>General public</option><option>Youth</option><option>Families</option>
+          <option>Indigenous peoples</option><option>Newcomers &amp; refugees</option>
+          <option>People experiencing mental health challenges</option>
+          <option>People experiencing homelessness</option><option>Older adults / seniors</option>
+        </select>
+      </div>
+      <div class="field"><label>Where does it run?</label>
+        <select id="geoField">
+          <option>Kelowna</option><option>West Kelowna</option><option>Lake Country</option>
+          <option>Peachland</option><option>Regional (Central Okanagan)</option><option>Virtual / online</option>
+        </select>
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Cost</label>
+        <select id="costField"><option>Free</option><option>Fee-based</option><option>Sliding scale</option><option>Subsidized spaces available</option></select>
+      </div>
+      <div class="field"><label>Your collaboration strength (1–5)</label>
+        <select id="ratingField"><option value="1">1 — solo effort</option><option value="2">2</option><option value="3" selected>3</option><option value="4">4</option><option value="5">5 — formal shared governance</option></select>
+      </div>
+    </div>
+    <button class="btn" id="confirmBtn">Confirm &amp; Save</button>
+    <button class="btn ghost" id="cancelBtn">Cancel</button>
+  `;
+  document.getElementById('confirmBtn').addEventListener('click', confirmSubmission);
+  document.getElementById('cancelBtn').addEventListener('click', () => { classifyResult.innerHTML=''; pendingClassification=null; });
+});
+
+function confirmSubmission() {
+  const goalN = +document.getElementById('goalOverride').value;
+  const goal = GOALS.find(g => g.n === goalN);
+  const record = {
+    org: getOrg(),
+    text: pendingClassification.text,
+    env: goal.env,
+    goalN: goal.n,
+    goalName: goal.name,
+    indicator: goal.indicator,
+    population: document.getElementById('popField').value,
+    geo: document.getElementById('geoField').value,
+    cost: document.getElementById('costField').value,
+    rating: +document.getElementById('ratingField').value,
+    ts: submissions.length
+  };
+  submissions.push(record);
+  document.getElementById('descInput').value = '';
+  classifyResult.innerHTML = `<div class="classify-result" style="background:var(--strong-soft);"><b>Saved.</b> This program now appears on your dashboard and feeds the regional aggregate — de-identified, never with your organization's name attached to anyone but Thrive's admin view.</div>`;
+  saveSubmissions();
+}
+
+/* ============================================================================
+   SCRIPT SECTION F — TIER 2: ORGANIZATION DASHBOARD RENDERER
+   ============================================================================ */
+function renderOrgDash() {
+  const org = getOrg();
+  document.getElementById('orgDashTitle').textContent = org + ' — Your Programs';
+  const mine = submissions.filter(s => s.org.toLowerCase() === org.toLowerCase());
+  const body = document.getElementById('orgDashBody');
+  if (!mine.length) {
+    body.innerHTML = `<div class="empty-note">No confirmed programs yet for "${org}". Go to step 1 and describe a program to see it appear here.</div>`;
+    return;
+  }
+  const goalsCovered = new Set(mine.map(m => m.goalN)).size;
+  const popsCovered = new Set(mine.map(m => m.population)).size;
+  const myAvgRating = (mine.reduce((a,m)=>a+m.rating,0)/mine.length);
+  const regionRatings = submissions.length ? submissions.reduce((a,m)=>a+m.rating,0)/submissions.length : myAvgRating;
+  body.innerHTML = `
+    <div class="stat-row">
+      <div class="stat-card"><div class="num">${mine.length}</div><div class="lbl">confirmed programs</div></div>
+      <div class="stat-card"><div class="num">${goalsCovered}</div><div class="lbl">goals covered</div></div>
+      <div class="stat-card"><div class="num">${popsCovered}</div><div class="lbl">populations reached</div></div>
+    </div>
+    <table class="prog-table">
+      <thead><tr><th>Description</th><th>Environment</th><th>Goal &amp; Indicator</th><th>Population</th><th>Geography</th><th>Cost</th><th>Collab.</th></tr></thead>
+      <tbody>${mine.map(m => `<tr>
+        <td style="max-width:220px;">${m.text}</td>
+        <td><span class="env-tag" style="background:${envColor[m.env]}">${envLabel[m.env]}</span></td>
+        <td>G${m.goalN} — ${m.goalName}<br><span style="color:var(--ink-soft);font-size:0.78rem;">${m.indicator}</span></td>
+        <td>${m.population}</td>
+        <td>${m.geo}</td>
+        <td>${m.cost}</td>
+        <td>${m.rating}/5</td>
+      </tr>`).join('')}</tbody>
+    </table>
+    <h3 style="font-family:'Nunito',sans-serif;font-size:0.95rem;margin:22px 0 10px;">You vs. Regional Average — Collaboration Strength</h3>
+    <div class="compare-row"><div class="name">${org}</div><div class="bar-track"><div class="bar-fill" style="width:${myAvgRating/5*100}%"></div></div><div class="bar-val">${myAvgRating.toFixed(1)}</div></div>
+    <div class="compare-row"><div class="name">Regional average</div><div class="bar-track"><div class="bar-fill region" style="width:${regionRatings/5*100}%"></div></div><div class="bar-val">${regionRatings.toFixed(1)}</div></div>
+  `;
+}
+
+/* ============================================================================
+   SCRIPT SECTION G — TIER 3: REGIONAL GAP VIEW RENDERER
+   ============================================================================ */
+function renderRegion() {
+  const popSel = document.getElementById('popFilter');
+  const geoSel = document.getElementById('geoFilter');
+  const pops = Array.from(new Set(submissions.map(s=>s.population)));
+  const geos = Array.from(new Set(submissions.map(s=>s.geo)));
+  popSel.innerHTML = '<option value="all">All populations</option>' + pops.map(p=>`<option value="${p}">${p}</option>`).join('');
+  geoSel.innerHTML = '<option value="all">All areas</option>' + geos.map(g=>`<option value="${g}">${g}</option>`).join('');
+  drawGrid();
+  popSel.onchange = drawGrid; geoSel.onchange = drawGrid;
+}
+function drawGrid() {
+  const pop = document.getElementById('popFilter').value;
+  const geo = document.getElementById('geoFilter').value;
+  const filtered = submissions.filter(s => (pop==='all'||s.population===pop) && (geo==='all'||s.geo===geo));
+  const goalGrid = document.getElementById('goalGrid');
+  goalGrid.innerHTML = '';
+  let zeroCount = 0;
+  GOALS.forEach(g => {
+    const count = filtered.filter(s => s.goalN === g.n).length;
+    if (count === 0) zeroCount++;
+    const cell = document.createElement('div');
+    cell.className = 'goal-cell' + (count < 2 ? ' gap-flag' : '');
+    cell.style.background = envColor[g.env];
+    cell.innerHTML = `<div class="g-num">GOAL ${g.n}</div><div class="g-name">${g.name}</div><div class="g-count">${count}</div>`;
+    goalGrid.appendChild(cell);
+  });
+  const note = filtered.length===0
+    ? 'No confirmed submissions match this filter yet — try testing an intake with a different population or area, or clear the filters.'
+    : `${zeroCount} of 16 goals show zero programs in this slice, out of ${filtered.length} confirmed submission(s) region-wide.`;
+  document.getElementById('regionInsight').textContent = note;
+}
+
+/* ============================================================================
+   SCRIPT SECTION H — TIER 4: ADMIN VIEW RENDERER
+   ============================================================================ */
+function renderAdmin() {
+  const wrap = document.getElementById('adminTableWrap');
+  if (!submissions.length) { wrap.innerHTML = '<div class="empty-note">No submissions yet across any organization. Add one from step 1.</div>'; return; }
+  wrap.innerHTML = `
+    <table class="admin-table">
+      <thead><tr><th>Organization</th><th>Description</th><th>Environment</th><th>Goal &amp; Indicator</th><th>Population</th><th>Geography</th><th>Cost</th><th>Collab.</th></tr></thead>
+      <tbody>${submissions.map(s => `<tr>
+        <td>${s.org}</td>
+        <td style="max-width:200px;">${s.text}</td>
+        <td><span class="env-tag" style="background:${envColor[s.env]}">${envLabel[s.env]}</span></td>
+        <td>G${s.goalN} — ${s.goalName}<br><span style="color:var(--ink-soft);font-size:0.76rem;">${s.indicator}</span></td>
+        <td>${s.population}</td>
+        <td>${s.geo}</td>
+        <td>${s.cost}</td>
+        <td>${s.rating}/5</td>
+      </tr>`).join('')}</tbody>
+    </table>`;
+}
+</script>
+</body>
+</html>
