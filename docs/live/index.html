@@ -40,9 +40,9 @@
    ============================================================ */
 @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@500;700;800&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap');
 :root {
-  --paper: #faf7f2; --ink: #2a1f30; --ink-soft: #6b5c72; --panel: #ffffff; --panel-border: #e8ddd0;
-  --purple: #5b247a; --purple-soft: #efe4f5; --gold: #f2a93b; --gold-soft: #fdf1dd;
-  --env-social: #e8b84b; --env-health: #e0693a; --env-built: #2fa6a0; --env-economic: #7b4b96;
+  --paper: #faf7f2; --ink: #2a1f30; --ink-soft: #574a5e; --panel: #ffffff; --panel-border: #e8ddd0;
+  --purple: #5b247a; --purple-soft: #e9dcf2; --gold: #f2a93b; --gold-soft: #fdf1dd;
+  --env-social: #a8720e; --env-health: #b8461f; --env-built: #1f7d78; --env-economic: #5c3470;
   --gap: #c0524b; --gap-soft: #fbe9e7; --strong: #2f8f6f; --strong-soft: #e6f5ee;
   --bubble-ai: #f1e9f6; --bubble-user: #5b247a; --bubble-user-text: #ffffff;
   --shadow: 0 2px 10px rgba(42,31,48,0.06);
@@ -50,14 +50,14 @@
 :root:not([data-theme="light"]) { @media (prefers-color-scheme: dark) {
   --paper: #201a26; --ink: #f2ecf5; --ink-soft: #b8a9c2; --panel: #2b2333; --panel-border: #4a3d54;
   --purple: #c79ee0; --purple-soft: #382a44; --gold: #f2a93b; --gold-soft: #3d2f1a;
-  --env-social: #d1a53f; --env-health: #d76a44; --env-built: #3bb6ac; --env-economic: #a077bd;
+  --env-social: #b8860b; --env-health: #c1502b; --env-built: #3bb6ac; --env-economic: #a077bd;
   --gap: #e0776f; --gap-soft: #3a2222; --strong: #62c79f; --strong-soft: #1d332a;
   --bubble-ai: #382a44; --bubble-user: #7c4a9e; --bubble-user-text: #ffffff; --shadow: 0 2px 12px rgba(0,0,0,0.35);
 }}
 :root[data-theme="dark"] {
   --paper: #201a26; --ink: #f2ecf5; --ink-soft: #b8a9c2; --panel: #2b2333; --panel-border: #4a3d54;
   --purple: #c79ee0; --purple-soft: #382a44; --gold: #f2a93b; --gold-soft: #3d2f1a;
-  --env-social: #d1a53f; --env-health: #d76a44; --env-built: #3bb6ac; --env-economic: #a077bd;
+  --env-social: #b8860b; --env-health: #c1502b; --env-built: #3bb6ac; --env-economic: #a077bd;
   --gap: #e0776f; --gap-soft: #3a2222; --strong: #62c79f; --strong-soft: #1d332a;
   --bubble-ai: #382a44; --bubble-user: #7c4a9e; --bubble-user-text: #ffffff; --shadow: 0 2px 12px rgba(0,0,0,0.35);
 }
@@ -71,7 +71,7 @@ body { margin: 0; background: var(--paper); color: var(--ink); font-family: 'IBM
 .masthead { text-align: center; margin-bottom: 18px; }
 .masthead .brand { font-family: 'Nunito', sans-serif; font-weight: 800; font-size: 1.5rem; color: var(--purple); }
 .masthead .sub { color: var(--ink-soft); font-size: 0.9rem; margin-top: 4px; }
-.masthead .demo-note { display: inline-block; margin-top: 10px; font-size: 0.72rem; font-family: 'IBM Plex Mono', monospace; background: var(--gold-soft); color: #8a5a12; padding: 5px 12px; border-radius: 20px; }
+.masthead .demo-note { display: inline-block; margin-top: 10px; font-size: 0.72rem; font-family: 'IBM Plex Mono', monospace; background: var(--gold-soft); color: #8a5a12; padding: 5px 12px; border-radius: 8px; }
 :root:not([data-theme="light"]) .masthead .demo-note { @media (prefers-color-scheme: dark) { color: var(--gold); } }
 :root[data-theme="dark"] .masthead .demo-note { color: var(--gold); }
 .sync-pill { display: inline-flex; align-items: center; gap: 6px; font-size: 0.7rem; font-family: 'IBM Plex Mono', monospace; color: var(--ink-soft); margin-left: 8px; }
@@ -81,17 +81,17 @@ body { margin: 0; background: var(--paper); color: var(--ink); font-family: 'IBM
    3. ORG IDENTITY BAR (stand-in for Cognito login)
    ============================================================ */
 .orgbar { display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
-.orgbar input { font-family: 'IBM Plex Sans', sans-serif; font-size: 0.85rem; padding: 8px 12px; border-radius: 20px; border: 1.5px solid var(--panel-border); background: var(--panel); color: var(--ink); width: 220px; }
+.orgbar input { font-family: 'IBM Plex Sans', sans-serif; font-size: 0.85rem; padding: 8px 12px; border-radius: 8px; border: 1.5px solid var(--panel-border); background: var(--panel); color: var(--ink); width: 220px; }
 .orgbar .as { font-size: 0.8rem; color: var(--ink-soft); }
 
 /* ============================================================
    4. STEP NAVIGATION
    ============================================================ */
 .steps { display: flex; gap: 6px; justify-content: center; margin-bottom: 24px; flex-wrap: wrap; }
-.step-btn { font-family: 'IBM Plex Sans', sans-serif; font-size: 0.8rem; font-weight: 600; padding: 9px 16px; border-radius: 20px; border: 1.5px solid var(--panel-border); background: var(--panel); color: var(--ink-soft); cursor: pointer; }
+.step-btn { font-family: 'IBM Plex Sans', sans-serif; font-size: 0.8rem; font-weight: 600; padding: 9px 16px; border-radius: 8px; border: 1.5px solid var(--panel-border); background: var(--panel); color: var(--ink-soft); cursor: pointer; }
 .step-btn.active { background: var(--purple); color: #fff; border-color: var(--purple); }
 
-.panel { background: var(--panel); border: 1px solid var(--panel-border); border-radius: 14px; box-shadow: var(--shadow); padding: 22px; min-height: 420px; }
+.panel { background: var(--panel); border: 1px solid var(--panel-border); border-radius: 10px; box-shadow: var(--shadow); padding: 22px; min-height: 420px; }
 .panel h2 { font-family: 'Nunito', sans-serif; font-size: 1.15rem; margin: 0 0 4px 0; color: var(--purple); }
 .panel .panel-sub { color: var(--ink-soft); font-size: 0.85rem; margin-bottom: 18px; }
 
@@ -107,7 +107,7 @@ body { margin: 0; background: var(--paper); color: var(--ink); font-family: 'IBM
 }
 .field textarea { min-height: 70px; resize: vertical; }
 .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-.btn { font-family: 'IBM Plex Sans', sans-serif; font-weight: 600; font-size: 0.88rem; padding: 10px 20px; border-radius: 20px; border: none; background: var(--purple); color: #fff; cursor: pointer; }
+.btn { font-family: 'IBM Plex Sans', sans-serif; font-weight: 600; font-size: 0.88rem; padding: 10px 20px; border-radius: 8px; border: none; background: var(--purple); color: #fff; cursor: pointer; }
 .btn.ghost { background: transparent; border: 1.5px solid var(--purple); color: var(--purple); }
 
 .classify-result { background: var(--purple-soft); border-radius: 10px; padding: 14px 16px; margin: 14px 0; font-size: 0.88rem; }

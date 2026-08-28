@@ -34,17 +34,17 @@
 :root {
   --paper: #faf7f2;
   --ink: #2a1f30;
-  --ink-soft: #6b5c72;
+  --ink-soft: #574a5e;
   --panel: #ffffff;
   --panel-border: #e8ddd0;
   --purple: #5b247a;
-  --purple-soft: #efe4f5;
+  --purple-soft: #e9dcf2;
   --gold: #f2a93b;
   --gold-soft: #fdf1dd;
-  --env-social: #e8b84b;
-  --env-health: #e0693a;
-  --env-built: #2fa6a0;
-  --env-economic: #7b4b96;
+  --env-social: #a8720e;
+  --env-health: #b8461f;
+  --env-built: #1f7d78;
+  --env-economic: #5c3470;
   --gap: #c0524b;
   --gap-soft: #fbe9e7;
   --strong: #2f8f6f;
@@ -59,7 +59,7 @@
   @media (prefers-color-scheme: dark) {
     --paper: #201a26; --ink: #f2ecf5; --ink-soft: #b8a9c2; --panel: #2b2333; --panel-border: #4a3d54;
     --purple: #c79ee0; --purple-soft: #382a44; --gold: #f2a93b; --gold-soft: #3d2f1a;
-    --env-social: #d1a53f; --env-health: #d76a44; --env-built: #3bb6ac; --env-economic: #a077bd;
+    --env-social: #b8860b; --env-health: #c1502b; --env-built: #3bb6ac; --env-economic: #a077bd;
     --gap: #e0776f; --gap-soft: #3a2222; --strong: #62c79f; --strong-soft: #1d332a;
     --bubble-ai: #382a44; --bubble-user: #7c4a9e; --bubble-user-text: #ffffff; --shadow: 0 2px 12px rgba(0,0,0,0.35);
   }
@@ -67,7 +67,7 @@
 :root[data-theme="dark"] {
   --paper: #201a26; --ink: #f2ecf5; --ink-soft: #b8a9c2; --panel: #2b2333; --panel-border: #4a3d54;
   --purple: #c79ee0; --purple-soft: #382a44; --gold: #f2a93b; --gold-soft: #3d2f1a;
-  --env-social: #d1a53f; --env-health: #d76a44; --env-built: #3bb6ac; --env-economic: #a077bd;
+  --env-social: #b8860b; --env-health: #c1502b; --env-built: #3bb6ac; --env-economic: #a077bd;
   --gap: #e0776f; --gap-soft: #3a2222; --strong: #62c79f; --strong-soft: #1d332a;
   --bubble-ai: #382a44; --bubble-user: #7c4a9e; --bubble-user-text: #ffffff; --shadow: 0 2px 12px rgba(0,0,0,0.35);
 }
@@ -87,7 +87,7 @@ body {
 .masthead .sub { color: var(--ink-soft); font-size: 0.9rem; margin-top: 4px; }
 .masthead .demo-note {
   display: inline-block; margin-top: 10px; font-size: 0.72rem; font-family: 'IBM Plex Mono', monospace;
-  background: var(--gold-soft); color: #8a5a12; padding: 5px 12px; border-radius: 20px;
+  background: var(--gold-soft); color: #8a5a12; padding: 5px 12px; border-radius: 8px;
 }
 :root:not([data-theme="light"]) .masthead .demo-note { @media (prefers-color-scheme: dark) { color: var(--gold); } }
 :root[data-theme="dark"] .masthead .demo-note { color: var(--gold); }
@@ -98,14 +98,14 @@ body {
 .steps { display: flex; gap: 6px; justify-content: center; margin-bottom: 24px; flex-wrap: wrap; }
 .step-btn {
   font-family: 'IBM Plex Sans', sans-serif; font-size: 0.8rem; font-weight: 600;
-  padding: 9px 16px; border-radius: 20px; border: 1.5px solid var(--panel-border);
+  padding: 9px 16px; border-radius: 8px; border: 1.5px solid var(--panel-border);
   background: var(--panel); color: var(--ink-soft); cursor: pointer; transition: all .15s;
 }
 .step-btn.active { background: var(--purple); color: #fff; border-color: var(--purple); }
 .step-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
 .panel {
-  background: var(--panel); border: 1px solid var(--panel-border); border-radius: 14px;
+  background: var(--panel); border: 1px solid var(--panel-border); border-radius: 10px;
   box-shadow: var(--shadow); padding: 22px; min-height: 420px;
 }
 .panel h2 { font-family: 'Nunito', sans-serif; font-size: 1.15rem; margin: 0 0 4px 0; color: var(--purple); }
@@ -115,7 +115,7 @@ body {
    4. TIER 1 — CONVERSATIONAL INTAKE (chat simulation)
    ============================================================ */
 .chat-log { display: flex; flex-direction: column; gap: 12px; max-width: 640px; margin: 0 auto 18px; min-height: 260px; }
-.msg { max-width: 78%; padding: 11px 15px; border-radius: 16px; font-size: 0.92rem; line-height: 1.45; animation: fadein .25s ease; }
+.msg { max-width: 78%; padding: 11px 15px; border-radius: 10px; font-size: 0.92rem; line-height: 1.45; animation: fadein .25s ease; }
 @keyframes fadein { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
 .msg.ai { background: var(--bubble-ai); color: var(--ink); align-self: flex-start; border-bottom-left-radius: 4px; }
 .msg.user { background: var(--bubble-user); color: var(--bubble-user-text); align-self: flex-end; border-bottom-right-radius: 4px; }
@@ -123,7 +123,7 @@ body {
 .chips { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; max-width: 640px; margin: 0 auto; }
 .chip {
   font-family: 'IBM Plex Sans', sans-serif; font-size: 0.85rem; font-weight: 500;
-  padding: 9px 16px; border-radius: 20px; border: 1.5px solid var(--purple);
+  padding: 9px 16px; border-radius: 8px; border: 1.5px solid var(--purple);
   background: transparent; color: var(--purple); cursor: pointer; transition: all .15s;
 }
 .chip:hover { background: var(--purple-soft); }
