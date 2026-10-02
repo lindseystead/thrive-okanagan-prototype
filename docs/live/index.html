@@ -3,18 +3,16 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Thrive Okanagan — Intake to Insight (Live, Shared Prototype)</title>
+<title>Thrive Okanagan — Intake to Insight (Live Prototype)</title>
 
 <!-- ============================================================================
      THRIVE OKANAGAN — COMMUNITY WELL-BEING INTELLIGENCE PLATFORM
-     Prototype 2 of 2: Live, Freeform, Shared-State Demo
+     Prototype 2 of 2: Live, Freeform Demo
 
      Purpose:
-       Unlike the scripted demo, this version accepts real free-text input,
-       classifies it against the actual 16-goal framework using a transparent,
-       client-side keyword classifier, and persists submissions to shared
-       browser storage so multiple people testing this page see the same
-       growing regional dataset.
+       Unlike the scripted demo, this version accepts free-text input,
+       classifies it against the 16-goal framework with a client-side
+       keyword classifier, and saves confirmed submissions in this browser.
 
      Important, stated plainly:
        The classifier here is a stand-in for the real system's AI layer
@@ -26,9 +24,8 @@
 
      Persistence:
        Submissions are stored in this browser's localStorage, scoped to this
-       page's own origin. Data does not sync between different browsers or
-       devices — it is a same-browser, same-page demonstration of shared
-       state, not a real multi-user backend.
+       page's own origin. Data does not sync between browsers, devices,
+       or people. It is not a multi-user backend.
 
      Prepared by: Lifesaver Technology Services Inc.
      For: Thrive Okanagan / KGH Foundation — AWS Imagine Grant Canada, Round Two
@@ -229,7 +226,7 @@ body { margin: 0; background: var(--paper); color: var(--ink); font-family: 'IBM
   <div class="panel" id="panel-3" style="display:none;">
     <h2>Thrive Administrator View — Full Dataset</h2>
     <div class="admin-banner">⬤ Row-level access, not aggregate-only — a deliberate, named exception for the Thrive backbone role</div>
-    <div class="panel-sub">Every organization's raw, confirmed submissions from this shared test session.</div>
+    <div class="panel-sub">Confirmed submissions saved in this browser. Sample rows are not live pilot data.</div>
     <div class="admin-table-wrap" id="adminTableWrap"></div>
   </div>
 
@@ -284,12 +281,11 @@ function classify(text) {
 }
 
 /* ============================================================================
-   SCRIPT SECTION C — SHARED-STATE PERSISTENCE
+   SCRIPT SECTION C — LOCAL PERSISTENCE
    Stand-in for Aurora: submissions persist to this browser's localStorage,
-   scoped to this page's own origin. This demonstrates the shape of a
-   shared, growing dataset — it does not sync across different browsers,
-   devices, or people. A real deployment would replace this with an
-   authenticated write to Amazon Aurora via API Gateway + Lambda.
+   scoped to this page's own origin. Nothing syncs across browsers, devices,
+   or people. A production system would replace this with an authenticated
+   write to a database.
    ============================================================================ */
 const STORAGE_KEY = 'thrive_demo_submissions_v1';
 let submissions = [];
